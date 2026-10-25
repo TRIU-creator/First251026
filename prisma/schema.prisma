@@ -1,0 +1,410 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+  WAREHOUSE_MANAGER
+  TECHNICAL_INSPECTOR
+  VIEWER
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+}
+
+enum WarehouseType {
+  COMMON
+  GP
+  TECHNICAL
+  OTHER
+}
+
+enum ItemType {
+  AMMUNITION
+  TECHNICAL_STORE
+  GENERAL_STORE
+  OTHER
+}
+
+enum StockStatus {
+  IN_STOCK
+  ISSUED
+  INSPECTION_DUE
+  QUARANTINE
+  REJECTED
+  DISPOSED
+}
+
+enum TransactionType {
+  INWARD
+  OUTWARD
+  ADJUSTMENT
+  STATUS_CHANGE
+  DISPOSAL
+}
+
+enum InspectionType {
+  ROUTINE
+  TECHNICAL
+  PRE_ISSUE
+  POST_STORAGE
+  SPECIAL
+  RE_INSPECTION
+}
+
+enum FormType {
+  AMMUNITION_INSPECTION_FORM
+  TECHNICAL_INSPECTION_FORM_263
+  TECHNICAL_INSPECTION_FORM_270
+  CUSTOM
+}
+
+enum InspectionResult {
+  PASS
+  FAIL
+  CONDITIONAL_PASS
+  REINSPECTION_REQUIRED
+}
+
+enum InspectionStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  REINSPECTION_REQUIRED
+  CLOSED
+}
+
+enum ParameterResult {
+  PASS
+  FAIL
+  NA
+  REWORK
+  REJECT
+}
+
+enum FieldType {
+  TEXT
+  NUMBER
+  DATE
+  DATETIME
+  SELECT
+  MULTI_SELECT
+  CHECKBOX
+  RADIO
+  TEXTAREA
+  FILE_UPLOAD
+  SIGNATURE
+  USER_SELECT
+  WAREHOUSE_SELECT
+  ITEM_SELECT
+}
+
+enum SubmissionStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  RETURNED_FOR_CHANGES
+  CANCELLED
+  CLOSED
+}
+
+enum ApprovalAction {
+  APPROVED
+  REJECTED
+  RETURNED_FOR_CHANGES
+}
+
+enum WeeklyReviewType {
+  AMMUNITION_STORAGE
+  TECHNICAL_INSPECTION
+  STOCK_VERIFICATION
+  OTHER
+}
+
+enum WeeklyReviewStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  CLOSED
+}
+
+enum EntityType {
+  STOCK_RECORD
+  INSPECTION
+  FORM_SUBMISSION
+  WEEKLY_REVIEW
+  REPORT
+}
+
+model User {
+  id                  String               @id @default(uuid())
+  name                String
+  email               String               @unique
+  passwordHash        String
+  phone               String?
+  role                Role                 @default(VIEWER)
+  status              Status               @default(ACTIVE)
+  assignedWarehouseIds String              @default("[]")
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+}
+
+model Warehouse {
+  id              String         @id @default(uuid())
+  warehouseCode   String         @unique
+  name            String
+  type            WarehouseType  @default(COMMON)
+  address         String
+  city            String
+  state           String
+  pincode         String
+  contactPerson   String
+  contactPhone    String
+  status          Status         @default(ACTIVE)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model WarehouseAssignment {
+  id          String   @id @default(uuid())
+  userId      String
+  warehouseId String
+
+  @@unique([userId, warehouseId])
+}
+
+model Item {
+  id                  String    @id @default(uuid())
+  itemCode            String    @unique
+  itemName            String
+  category            String
+  subCategory         String?
+  type                ItemType  @default(AMMUNITION)
+  unit                String    @default("ROUNDS")
+  batchNumber         String?
+  serialNumberTracking Boolean  @default(false)
+  minimumStockLevel   Float     @default(0)
+  maximumStockLevel   Float     @default(10000)
+  unitCost            Float     @default(0)
+  currency            String    @default("INR")
+  shelfLifeMonths     Int?
+  storageConditions   String?
+  status              Status    @default(ACTIVE)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+}
+
+model StockRecord {
+  id                   String      @id @default(uuid())
+  warehouseId          String
+  itemId               String
+  batchNumber          String
+  serialNumber         String?
+  quantity             Float
+  unit                 String      @default("ROUNDS")
+  unitCost             Float       @default(0)
+  totalValue           Float       @default(0)
+  storageLocation      String
+  storageCondition     String
+  dateOfReceipt        DateTime    @default(now())
+  lastInspectionDate   DateTime?
+  nextInspectionDueDate DateTime?
+  status               StockStatus @default(IN_STOCK)
+  remarks              String?
+  createdById          String
+  createdAt            DateTime    @default(now())
+  updatedAt            DateTime    @updatedAt
+}
+
+model StockLedger {
+  id                      String          @id @default(uuid())
+  warehouseId             String
+  itemId                  String
+  stockRecordId           String?
+  transactionType         TransactionType
+  quantity                Float
+  unitCost                Float           @default(0)
+  totalValue              Float           @default(0)
+  batchNumber             String?
+  serialNumber            String?
+  balanceAfterTransaction Float
+  remarks                 String?
+  createdById             String
+  createdAt               DateTime        @default(now())
+}
+
+model Inspection {
+  id                   String           @id @default(uuid())
+  inspectionNumber     String           @unique
+  warehouseId          String
+  itemId               String
+  stockRecordId        String?
+  inspectionType       InspectionType   @default(ROUTINE)
+  inspectionDate       DateTime         @default(now())
+  inspectorId          String
+  formType             FormType         @default(AMMUNITION_INSPECTION_FORM)
+  quantityInspected    Float            @default(0)
+  quantityPassed       Float            @default(0)
+  quantityFailed       Float            @default(0)
+  quantityQuarantined  Float            @default(0)
+  overallResult        InspectionResult @default(PASS)
+  findings             String?
+  recommendations      String?
+  status               InspectionStatus @default(DRAFT)
+  approvedById         String?
+  approvedAt           DateTime?
+  rejectionReason      String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+}
+
+model InspectionParameter {
+  id            String          @id @default(uuid())
+  inspectionId  String
+  parameterName String
+  expectedValue String
+  observedValue String
+  result        ParameterResult @default(PASS)
+  remarks       String?
+  createdAt     DateTime        @default(now())
+}
+
+model InspectionSerial {
+  id           String   @id @default(uuid())
+  inspectionId String
+  serialNumber String
+  quantity     Float    @default(1)
+  condition    String   @default("Serviceable")
+  result       String   @default("PASS")
+  remarks      String?
+}
+
+model FormTemplate {
+  id                    String    @id @default(uuid())
+  formCode              String    @unique
+  formName              String
+  formVersion           String    @default("1.0")
+  formType              String    @default("TECHNICAL")
+  description           String?
+  status                String    @default("ACTIVE")
+  requiresApproval      Boolean   @default(true)
+  approvalLevels        Int       @default(1)
+  allowedRoles          String    @default("[\"ADMIN\",\"TECHNICAL_INSPECTOR\"]")
+  applicableWarehouseIds String   @default("[]")
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+model FormField {
+  id             String    @id @default(uuid())
+  formTemplateId String
+  fieldKey       String
+  fieldLabel     String
+  fieldType      FieldType @default(TEXT)
+  required       Boolean   @default(false)
+  defaultValue   String?
+  options        String    @default("[]")
+  validationRules String   @default("{}")
+  displayOrder   Int       @default(0)
+  isConditional  Boolean   @default(false)
+  conditionalLogic String  @default("{}")
+}
+
+model FormSubmission {
+  id                   String           @id @default(uuid())
+  formTemplateId       String
+  formNumber           String           @unique
+  warehouseId          String
+  itemId               String?
+  stockRecordId        String?
+  inspectionId         String?
+  submittedById        String
+  status               SubmissionStatus @default(DRAFT)
+  formData             String           @default("{}")
+  currentApprovalLevel Int              @default(1)
+  submittedAt          DateTime?
+  approvedAt           DateTime?
+  remarks              String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+}
+
+model FormApproval {
+  id               String         @id @default(uuid())
+  formSubmissionId String
+  approvalLevel    Int            @default(1)
+  approverId       String
+  action           ApprovalAction @default(APPROVED)
+  remarks          String
+  actionAt         DateTime       @default(now())
+  createdAt        DateTime       @default(now())
+}
+
+model WeeklyReview {
+  id                    String             @id @default(uuid())
+  reviewNumber          String             @unique
+  warehouseId           String
+  weekStartDate         DateTime
+  weekEndDate           DateTime
+  reviewType            WeeklyReviewType   @default(AMMUNITION_STORAGE)
+  totalRecordsReviewed  Int                @default(0)
+  pendingInspections    Int                @default(0)
+  completedInspections  Int                @default(0)
+  approvedInspections   Int                @default(0)
+  rejectedInspections   Int                @default(0)
+  stockValue            Float              @default(0)
+  remarks               String?
+  preparedById          String
+  status                WeeklyReviewStatus @default(DRAFT)
+  approvedById          String?
+  approvedAt            DateTime?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+}
+
+model Document {
+  id           String     @id @default(uuid())
+  entityType   EntityType
+  entityId     String
+  fileName     String
+  fileType     String
+  fileSize     Int
+  filePath     String
+  fileUrl      String
+  uploadedById String
+  uploadedAt   DateTime   @default(now())
+  remarks      String?
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  userId     String?
+  action     String
+  entityType String
+  entityId   String
+  beforeData String?
+  afterData  String?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+}
+
+model Setting {
+  id          String   @id @default(uuid())
+  key         String   @unique
+  value       String
+  description String?
+  updatedAt   DateTime @default(now())
+}

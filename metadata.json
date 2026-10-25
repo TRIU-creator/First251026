@@ -1,0 +1,6 @@
+{
+  "name": "WMS Pro - Warehouse Receipt & Issue Management",
+  "description": "Enterprise warehouse receipt, issue, quality condition checks, DRS tracking, and stock ledger management system with role-based access control.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
