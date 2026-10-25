@@ -1,4 +1,4 @@
-# ATSI-WMS Startup Guide
+# AWCMS Startup Guide
 
 ## Quick Start (Windows)
 

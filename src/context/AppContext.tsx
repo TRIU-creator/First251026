@@ -10,7 +10,10 @@ import {
   WeeklyReview,
   Document as DocumentType,
   DashboardSummary,
-  DashboardCharts
+  DashboardCharts,
+  Receipt,
+  Issue,
+  DRSNumber
 } from '../types';
 import { api } from '../services/api';
 
@@ -38,8 +41,13 @@ interface AppContextType {
   formSubmissions: FormSubmission[];
   weeklyReviews: WeeklyReview[];
   documents: DocumentType[];
+  receipts: Receipt[];
+  issues: Issue[];
+  drsNumbers: DRSNumber[];
   dashboardSummary: DashboardSummary | null;
   dashboardCharts: DashboardCharts | null;
+  dashboardSummaryExtended: any;
+  dashboardChartsExtended: any;
 
   // Data Refreshers
   refreshAll: () => Promise<void>;
@@ -51,6 +59,9 @@ interface AppContextType {
   refreshWeeklyReviews: () => Promise<void>;
   refreshDashboard: () => Promise<void>;
   refreshDocuments: () => Promise<void>;
+  refreshReceipts: () => Promise<void>;
+  refreshIssues: () => Promise<void>;
+  refreshDRS: () => Promise<void>;
 
   // Roles convenience
   isAdmin: boolean;
@@ -75,8 +86,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [formSubmissions, setFormSubmissions] = useState<FormSubmission[]>([]);
   const [weeklyReviews, setWeeklyReviews] = useState<WeeklyReview[]>([]);
   const [documents, setDocuments] = useState<DocumentType[]>([]);
+  const [receipts, setReceipts] = useState<Receipt[]>([]);
+  const [issues, setIssues] = useState<Issue[]>([]);
+  const [drsNumbers, setDRSNumbers] = useState<DRSNumber[]>([]);
   const [dashboardSummary, setDashboardSummary] = useState<DashboardSummary | null>(null);
   const [dashboardCharts, setDashboardCharts] = useState<DashboardCharts | null>(null);
+  const [dashboardSummaryExtended, setDashboardSummaryExtended] = useState<any>(null);
+  const [dashboardChartsExtended, setDashboardChartsExtended] = useState<any>(null);
 
   const refreshHealth = useCallback(async () => {
     try {
@@ -176,6 +192,46 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, []);
 
+  const refreshReceipts = useCallback(async () => {
+    try {
+      const res = await api.getReceipts();
+      setReceipts(res.receipts);
+    } catch (err) {
+      console.error('Error fetching receipts:', err);
+    }
+  }, []);
+
+  const refreshIssues = useCallback(async () => {
+    try {
+      const res = await api.getIssues();
+      setIssues(res.issues);
+    } catch (err) {
+      console.error('Error fetching issues:', err);
+    }
+  }, []);
+
+  const refreshDRS = useCallback(async () => {
+    try {
+      const res = await api.getDRS();
+      setDRSNumbers(res.drs);
+    } catch (err) {
+      console.error('Error fetching DRS numbers:', err);
+    }
+  }, []);
+
+  const refreshDashboardExtended = useCallback(async () => {
+    try {
+      const [sumRes, chRes] = await Promise.all([
+        api.getDashboardSummaryExtended(),
+        api.getDashboardChartsExtended()
+      ]);
+      setDashboardSummaryExtended(sumRes);
+      setDashboardChartsExtended(chRes);
+    } catch (err) {
+      console.error('Error fetching extended dashboard metrics:', err);
+    }
+  }, []);
+
   const refreshAll = useCallback(async () => {
     await Promise.allSettled([
       refreshWarehouses(),
@@ -185,7 +241,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       refreshForms(),
       refreshWeeklyReviews(),
       refreshDashboard(),
-      refreshDocuments()
+      refreshDocuments(),
+      refreshReceipts(),
+      refreshIssues(),
+      refreshDRS(),
+      refreshDashboardExtended()
     ]);
   }, [
     refreshWarehouses,
@@ -195,7 +255,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     refreshForms,
     refreshWeeklyReviews,
     refreshDashboard,
-    refreshDocuments
+    refreshDocuments,
+    refreshReceipts,
+    refreshIssues,
+    refreshDRS,
+    refreshDashboardExtended
   ]);
 
   // Initial load
@@ -268,8 +332,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         formSubmissions,
         weeklyReviews,
         documents,
+        receipts,
+        issues,
+        drsNumbers,
         dashboardSummary,
         dashboardCharts,
+        dashboardSummaryExtended,
+        dashboardChartsExtended,
         refreshAll,
         refreshWarehouses,
         refreshItems,
@@ -279,6 +348,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         refreshWeeklyReviews,
         refreshDashboard,
         refreshDocuments,
+        refreshReceipts,
+        refreshIssues,
+        refreshDRS,
         isAdmin,
         isManager,
         isInspector,

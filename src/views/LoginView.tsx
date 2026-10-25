@@ -113,7 +113,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLoginSuccess }) => {
             <Shield className="w-8 h-8" />
           </div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 uppercase">
-            Ammunition & Technical Store Inspection System
+            Ammunition & Warehouse Compliance Management System (AWCMS)
           </h1>
           <p className="text-xs text-slate-500 mt-1 font-mono tracking-wider font-medium">
             ORDNANCE WAREHOUSE SURVEILLANCE &amp; FORM 263/270 VERIFICATION

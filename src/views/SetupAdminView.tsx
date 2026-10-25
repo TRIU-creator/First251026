@@ -65,7 +65,7 @@ export const SetupAdminView: React.FC<SetupAdminViewProps> = ({ onSetupSuccess }
             Initial System Setup
           </h1>
           <p className="text-xs text-slate-600 mt-2 font-mono">
-            AMMUNITION & TECHNICAL STORE INSPECTION MANAGEMENT SYSTEM (ATSI-WMS)
+            AMMUNITION & WAREHOUSE COMPLIANCE MANAGEMENT SYSTEM (AWCMS)
           </p>
         </div>
 

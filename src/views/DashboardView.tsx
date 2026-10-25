@@ -1,19 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import {
-  Building2,
-  Boxes,
-  Layers,
-  ClipboardCheck,
-  AlertTriangle,
-  FileSpreadsheet,
-  CalendarCheck2,
-  TrendingUp,
-  ShieldCheck,
-  CheckCircle,
-  XCircle,
-  Clock,
-  ArrowRight
+  Building2, Boxes, Layers, ClipboardCheck, AlertTriangle, FileSpreadsheet,
+  CalendarCheck2, TrendingUp, ShieldCheck, CheckCircle, XCircle, Clock,
+  ArrowRight, Truck, Package, RotateCcw, Users, DollarSign, FileText
 } from 'lucide-react';
 import { NavigationTab } from '../components/layout/AppSidebar';
 
@@ -22,66 +12,81 @@ interface DashboardViewProps {
   onSelectInspection?: (id: string) => void;
 }
 
-export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate, onSelectInspection }) => {
-  const { dashboardSummary, dashboardCharts, inspections, stockRecords, weeklyReviews, currentUser } = useApp();
+const statusColor = (status: string) => {
+  switch (status) {
+    case 'DRAFT': return 'bg-slate-100 text-slate-700 border-slate-200';
+    case 'SUBMITTED': return 'bg-amber-50 text-amber-800 border-amber-200';
+    case 'UNDER_REVIEW': return 'bg-blue-50 text-blue-800 border-blue-200';
+    case 'APPROVED': return 'bg-emerald-50 text-emerald-800 border-emerald-200';
+    case 'REJECTED': return 'bg-red-50 text-red-800 border-red-200';
+    case 'REINSPECTION_REQUIRED': return 'bg-orange-50 text-orange-800 border-orange-200';
+    case 'CLOSED': return 'bg-teal-50 text-teal-800 border-teal-200';
+    default: return 'bg-slate-100 text-slate-600 border-slate-200';
+  }
+};
 
-  const summary = dashboardSummary || {
-    totalWarehouses: 0,
-    totalItems: 0,
-    totalStockRecords: 0,
-    totalQuantityInStock: 0,
-    totalStockValueINR: 0,
-    totalInspections: 0,
-    pendingInspections: 0,
-    completedInspections: 0,
-    approvedInspections: 0,
-    rejectedInspections: 0,
-    weeklyApprovalsPending: 0,
-    weeklyApprovalsCompleted: 0,
-    itemsRequiringReinspection: 0,
-    form263Submissions: 0,
-    form270Submissions: 0
+const formatINR = (val: number) => {
+  return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val);
+};
+
+export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate, onSelectInspection }) => {
+  const {
+    dashboardSummary,
+    dashboardCharts,
+    dashboardSummaryExtended,
+    dashboardChartsExtended,
+    inspections,
+    stockRecords,
+    weeklyReviews,
+    currentUser,
+    isAdmin,
+    isManager,
+    isViewer
+  } = useApp();
+
+  const summary = dashboardSummaryExtended || dashboardSummary || {
+    totalWarehouses: 0, totalUsers: 0, totalItems: 0, totalStockRecords: 0,
+    totalReceipts: 0, totalIssues: 0, totalInspections: 0, pendingInspections: 0,
+    completedInspections: 0, approvedInspections: 0, rejectedInspections: 0,
+    pendingWeeklyApprovals: 0, completedWeeklyApprovals: 0, stockValue: 0,
+    lowStockItems: 0, inspectionDueItems: 0, overdueInspections: 0,
+    pendingForm263: 0, pendingForm270: 0
+  };
+
+  const charts = dashboardChartsExtended || dashboardCharts || {
+    inspectionsByStatus: [], inspectionsByWarehouse: [], inspectionsByMonth: [],
+    stockByCategory: [], form263Vs270: [], weeklyApprovalStatus: [], warehouseStockSummary: []
   };
 
   const pendingInspectionsList = inspections.filter(
     (i) => i.status === 'SUBMITTED' || i.status === 'UNDER_REVIEW'
   );
-
   const pendingReviewsList = weeklyReviews.filter((r) => r.status === 'SUBMITTED');
 
-  // Format currency
-  const formatINR = (val: number) => {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
-    }).format(val);
-  };
+  // Determine warehouse scope for display
+  const userWarehouses = isAdmin ? [] : (isManager || isViewer ? [] : []);
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
-      {/* Top Banner */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      {/* App Banner */}
+      <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <div className="flex items-center gap-2 text-xs font-mono text-emerald-700 uppercase tracking-wider mb-1 font-semibold">
-            <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            Active Surveillance Status • Indian Ordnance Standard
+          <div className="flex items-center gap-2 text-emerald-400 text-xs font-mono uppercase tracking-wider mb-2 font-semibold">
+            <Package className="w-3 h-3" />
+            <span>Ammunition & Warehouse Compliance Management System</span>
           </div>
-          <h1 className="text-xl font-bold text-slate-900 tracking-tight">
-            Ammunition & Technical Stores Surveillance Console
-          </h1>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Real-time depot stock reconciliation, Form 263/270 inspection lifecycles, and weekly review endorsements.
+          <h1 className="text-xl font-bold text-white tracking-tight">AWCMS Operations Dashboard</h1>
+          <p className="text-slate-300 text-sm mt-1">
+            Real-time warehouse stock reconciliation, receipt/issue lifecycle, Form 263/270 inspection workflows,
+            and weekly review approvals. Data sourced from live database.
           </p>
         </div>
-
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-col md:flex-row gap-3">
           <button
             onClick={() => onNavigate('stock')}
             className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition-colors shadow-xs cursor-pointer"
           >
-            <Layers className="w-3.5 h-3.5" />
-            <span>Stock Inward</span>
+            <Layers className="w-3.5 h-3.5" /> Stock Inward
           </button>
           <button
             onClick={() => onNavigate('inspections')}
@@ -93,167 +98,268 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate, onSele
         </div>
       </div>
 
-      {/* Primary KPI Grid */}
+      {/* Primary KPI Grid - 8 cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* KPI 1 */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs hover:border-emerald-300 transition-colors">
+        {/* KPI 1: Warehouses */}
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">Depot Inventory Valuation</span>
-            <div className="p-2 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-100">
-              <TrendingUp className="w-4 h-4" />
-            </div>
+            <span className="text-xs font-semibold uppercase tracking-wider">Total Warehouses</span>
+            <Building2 className="w-4 h-4 text-emerald-600" />
           </div>
-          <div className="text-2xl font-bold text-slate-900 font-mono">{formatINR(summary.totalStockValueINR)}</div>
-          <div className="text-[11px] text-slate-500 mt-1 flex items-center justify-between">
-            <span>{summary.totalQuantityInStock.toLocaleString()} Total Units</span>
-            <span className="text-emerald-700 font-medium">{summary.totalStockRecords} Batches</span>
+          <div className="text-3xl font-bold text-slate-900 font-mono">{summary.totalWarehouses}</div>
+        </div>
+        {/* KPI 2: Users */}
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
+          <div className="flex items-center justify-between text-slate-500 mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider">Total Users</span>
+            <Users className="w-4 h-4 text-blue-600" />
+          </div>
+          <div className="text-3xl font-bold text-slate-900 font-mono">{summary.totalUsers}</div>
+        </div>
+        {/* KPI 3: Items */}
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
+          <div className="flex items-center justify-between text-slate-500 mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider">Total Items</span>
+            <Boxes className="w-4 h-4 text-indigo-600" />
+          </div>
+          <div className="text-3xl font-bold text-slate-900 font-mono">{summary.totalItems}</div>
+        </div>
+        {/* KPI 4: Stock Value */}
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
+          <div className="flex items-center justify-between text-slate-500 mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider">Stock Value</span>
+            <DollarSign className="w-4 h-4 text-emerald-600" />
+          </div>
+          <div className="text-3xl font-bold text-slate-900 font-mono">{formatINR(summary.stockValue || 0)}</div>
+          <div className="text-[11px] text-slate-500 mt-1">{summary.totalStockRecords || 0} Stock Batches</div>
+        </div>
+        {/* KPI 5: Receipts */}
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
+          <div className="flex items-center justify-between text-slate-500 mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider">Total Receipts</span>
+            <Truck className="w-4 h-4 text-blue-600" />
+          </div>
+          <div className="text-3xl font-bold text-slate-900 font-mono">{summary.totalReceipts}</div>
+        </div>
+        {/* KPI 6: Issues */}
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
+          <div className="flex items-center justify-between text-slate-500 mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider">Total Issues</span>
+            <Package className="w-4 h-4 text-indigo-600" />
+          </div>
+          <div className="text-3xl font-bold text-slate-900 font-mono">{summary.totalIssues}</div>
+        </div>
+        {/* KPI 7: Low Stock */}
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
+          <div className="flex items-center justify-between text-slate-500 mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider">Low Stock Items</span>
+            <AlertTriangle className="w-4 h-4 text-amber-600" />
+          </div>
+          <div className="text-3xl font-bold text-amber-700 font-mono">{summary.lowStockItems}</div>
+        </div>
+        {/* KPI 8: Overdue Inspections */}
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
+          <div className="flex items-center justify-between text-slate-500 mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider">Overdue Inspections</span>
+            <XCircle className="w-4 h-4 text-red-600" />
+          </div>
+          <div className="text-3xl font-bold text-red-700 font-mono">{summary.overdueInspections}</div>
+        </div>
+      </div>
+
+      {/* Secondary KPI Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Total Inspections */}
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
+          <div className="flex items-center justify-between text-slate-500 mb-2">
+            <span className="text-xs font-semibold uppercase tracking-wider">Total Inspections</span>
+            <ClipboardCheck className="w-4 h-4 text-slate-600" />
+          </div>
+          <div className="text-3xl font-bold text-slate-900 font-mono">{summary.totalInspections}</div>
+          <div className="text-[11px] text-slate-500 mt-1">
+            <span className="text-emerald-600 font-medium">{summary.approvedInspections} Approved</span>
+            <span className="ml-2 text-red-600 font-medium">{summary.rejectedInspections} Rejected</span>
           </div>
         </div>
-
-        {/* KPI 2 */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs hover:border-emerald-300 transition-colors">
+        {/* Pending Inspections */}
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">Inspections Completed</span>
-            <div className="p-2 rounded-lg bg-teal-50 text-teal-700 border border-teal-100">
-              <ShieldCheck className="w-4 h-4" />
-            </div>
+            <span className="text-xs font-semibold uppercase tracking-wider">Pending Inspections</span>
+            <Clock className="w-4 h-4 text-amber-600" />
           </div>
-          <div className="text-2xl font-bold text-slate-900 font-mono">{summary.completedInspections}</div>
-          <div className="text-[11px] text-slate-500 mt-1 flex items-center justify-between">
-            <span className="text-emerald-700 font-medium flex items-center gap-1">
-              <CheckCircle className="w-3 h-3 text-emerald-600" /> {summary.approvedInspections} Approved
-            </span>
-            <span className="text-rose-600 font-medium flex items-center gap-1">
-              <XCircle className="w-3 h-3 text-rose-500" /> {summary.rejectedInspections} Rejected
-            </span>
-          </div>
+          <div className="text-3xl font-bold text-amber-700 font-mono">{summary.pendingInspections}</div>
         </div>
-
-        {/* KPI 3 */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs hover:border-emerald-300 transition-colors">
+        {/* Pending Weekly */}
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">Pending Decisions</span>
-            <div className="p-2 rounded-lg bg-amber-50 text-amber-700 border border-amber-100">
-              <Clock className="w-4 h-4" />
-            </div>
+            <span className="text-xs font-semibold uppercase tracking-wider">Pending Weekly Approvals</span>
+            <CalendarCheck2 className="w-4 h-4 text-teal-600" />
           </div>
-          <div className="text-2xl font-bold text-amber-600 font-mono">{summary.pendingInspections}</div>
-          <div className="text-[11px] text-slate-500 mt-1 flex items-center justify-between">
-            <span>Weekly Reviews Pending:</span>
-            <span className="font-semibold text-amber-700 font-mono">{summary.weeklyApprovalsPending}</span>
-          </div>
+          <div className="text-3xl font-bold text-teal-700 font-mono">{summary.pendingWeeklyApprovals}</div>
         </div>
-
-        {/* KPI 4 */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs hover:border-emerald-300 transition-colors">
+        {/* Pending Forms */}
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-xs">
           <div className="flex items-center justify-between text-slate-500 mb-2">
-            <span className="text-xs font-semibold uppercase tracking-wider">Form 263 / 270 Submissions</span>
-            <div className="p-2 rounded-lg bg-indigo-50 text-indigo-700 border border-indigo-100">
-              <FileSpreadsheet className="w-4 h-4" />
-            </div>
+            <span className="text-xs font-semibold uppercase tracking-wider">Pending Form 263 / 270</span>
+            <FileText className="w-4 h-4 text-indigo-600" />
           </div>
-          <div className="text-2xl font-bold text-slate-900 font-mono">
-            {summary.form263Submissions + summary.form270Submissions}
+          <div className="text-3xl font-bold text-indigo-700 font-mono">
+            {summary.pendingForm263 + summary.pendingForm270}
           </div>
-          <div className="text-[11px] text-slate-500 mt-1 flex items-center justify-between font-mono">
-            <span>Form 263: {summary.form263Submissions}</span>
-            <span>Form 270: {summary.form270Submissions}</span>
+          <div className="text-[11px] text-slate-500 mt-1 flex justify-between font-mono">
+            <span>Form 263: {summary.pendingForm263}</span>
+            <span>Form 270: {summary.pendingForm270}</span>
           </div>
         </div>
       </div>
 
-      {/* Visual Analytics Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Stock by Category Card */}
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Inspections by Status */}
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-              Ammunition & Store Classification Breakdown
-            </h3>
-            <span className="text-[11px] text-slate-400 font-mono">Database Aggregated</span>
+          <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-4">Inspections by Status</h3>
+          <div className="space-y-2">
+            {(charts.inspectionsByStatus || []).length > 0 ? (
+              (charts.inspectionsByStatus as any[]).map((item) => {
+                const max = Math.max(...(charts.inspectionsByStatus as any[]).map((x) => x.count), 1);
+                const pct = Math.round((item.count / max) * 100);
+                return (
+                  <div key={item.status} className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-slate-700 font-medium">{item.status.replace(/_/g, ' ')}</span>
+                      <span className="text-slate-500 font-mono">{item.count}</span>
+                    </div>
+                    <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                      <div className={`h-full rounded-full transition-all duration-500 ${statusColor(item.status)}`} style={{ width: `${Math.max(pct, 5)}%` }} />
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="py-8 text-center text-xs text-slate-400 font-mono">No inspection data.</div>
+            )}
           </div>
+        </div>
 
+        {/* Inspections by Month */}
+        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs">
+          <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-4">Inspections by Month</h3>
+          <div className="space-y-2">
+            {(charts.inspectionsByMonth || []).length > 0 ? (
+              (charts.inspectionsByMonth as any[]).map((item) => (
+                <div key={item.month} className="space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-700 font-medium">{item.month}</span>
+                    <span className="text-slate-500 font-mono">{item.count}</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                    <div className="bg-blue-600 h-full rounded-full" style={{ width: '100%' }} />
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="py-8 text-center text-xs text-slate-400 font-mono">No monthly data.</div>
+            )}
+          </div>
+        </div>
+
+        {/* Form 263 vs 270 */}
+        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs">
+          <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-4">Form 263 vs 270</h3>
           <div className="space-y-3">
-            {dashboardCharts?.stockByCategory && dashboardCharts.stockByCategory.length > 0 ? (
-              dashboardCharts.stockByCategory.map((cat) => {
-                const maxVal = Math.max(...dashboardCharts.stockByCategory.map((c) => c.value), 1);
-                const pct = Math.round((cat.value / maxVal) * 100);
+            {(charts.form263Vs270 || []).length > 0 ? (
+              (charts.form263Vs270 as any[]).map((item) => (
+                <div key={item.formType} className="space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-700 font-medium">{item.formType.replace('_', ' ')}</span>
+                    <span className="text-slate-500 font-mono">{item.count}</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                    <div className="bg-indigo-600 h-full rounded-full" style={{ width: '100%' }} />
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="py-8 text-center text-xs text-slate-400 font-mono">No form submissions.</div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Stock by Category */}
+        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs">
+          <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-4">Stock by Category</h3>
+          <div className="space-y-3">
+            {(charts.stockByCategory || []).length > 0 ? (
+              (charts.stockByCategory as any[]).map((cat) => {
+                const max = Math.max(...(charts.stockByCategory as any[]).map((c) => c.value), 1);
+                const pct = Math.round((cat.value / max) * 100);
                 return (
                   <div key={cat.name} className="space-y-1">
                     <div className="flex justify-between text-xs">
                       <span className="text-slate-700 font-medium">{cat.name}</span>
-                      <span className="text-slate-500 font-mono">
-                        {cat.value.toLocaleString()} units • {formatINR(cat.totalValue)}
-                      </span>
+                      <span className="text-slate-500 font-mono">{cat.value.toLocaleString()} units • {formatINR(cat.totalValue || 0)}</span>
                     </div>
                     <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                      <div
-                        className="bg-emerald-600 h-full rounded-full transition-all duration-500"
-                        style={{ width: `${Math.max(pct, 5)}%` }}
-                      />
+                      <div className="bg-emerald-600 h-full rounded-full" style={{ width: `${Math.max(pct, 5)}%` }} />
                     </div>
                   </div>
                 );
               })
             ) : (
-              <div className="py-8 text-center text-xs text-slate-400 font-mono">
-                No active stock classifications recorded in database.
-              </div>
+              <div className="py-8 text-center text-xs text-slate-400 font-mono">No stock categories.</div>
             )}
           </div>
         </div>
 
-        {/* Top Warehouses by Storage Card */}
+        {/* Weekly Approval Status */}
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs">
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
-              Warehouse Depot Storage Allocation
-            </h3>
-            <button
-              onClick={() => onNavigate('warehouses')}
-              className="text-[11px] text-emerald-700 hover:text-emerald-800 font-semibold flex items-center gap-1 cursor-pointer"
-            >
-              <span>View Depots</span>
-              <ArrowRight className="w-3 h-3" />
-            </button>
-          </div>
-
+          <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-4">Weekly Approval Status</h3>
           <div className="space-y-3">
-            {dashboardCharts?.topWarehouses && dashboardCharts.topWarehouses.length > 0 ? (
-              dashboardCharts.topWarehouses.map((wh) => {
-                const maxVal = Math.max(...dashboardCharts.topWarehouses.map((w) => w.totalQuantity), 1);
-                const pct = Math.round((wh.totalQuantity / maxVal) * 100);
-                return (
-                  <div key={wh.warehouse_code} className="space-y-1">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-slate-700 font-medium">
-                        [{wh.warehouse_code}] {wh.name}
-                      </span>
-                      <span className="text-slate-500 font-mono">
-                        {wh.totalQuantity.toLocaleString()} units • {formatINR(wh.totalValue)}
-                      </span>
-                    </div>
-                    <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                      <div
-                        className="bg-teal-600 h-full rounded-full transition-all duration-500"
-                        style={{ width: `${Math.max(pct, 5)}%` }}
-                      />
-                    </div>
+            {(charts.weeklyApprovalStatus || []).length > 0 ? (
+              (charts.weeklyApprovalStatus as any[]).map((item) => (
+                <div key={item.status} className="space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-700 font-medium">{item.status.replace(/_/g, ' ')}</span>
+                    <span className="text-slate-500 font-mono">{item.count}</span>
                   </div>
-                );
-              })
+                  <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                    <div className="bg-teal-600 h-full rounded-full" style={{ width: '100%' }} />
+                  </div>
+                </div>
+              ))
             ) : (
-              <div className="py-8 text-center text-xs text-slate-400 font-mono">
-                No depot inventory records registered yet.
-              </div>
+              <div className="py-8 text-center text-xs text-slate-400 font-mono">No weekly reviews.</div>
+            )}
+          </div>
+        </div>
+
+        {/* Warehouse Stock Summary */}
+        <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs">
+          <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-4">Warehouse Stock Summary</h3>
+          <div className="space-y-3">
+            {(charts.warehouseStockSummary || []).length > 0 ? (
+              (charts.warehouseStockSummary as any[]).map((wh) => (
+                <div key={wh.warehouse} className="space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-700 font-medium">[{wh.warehouse}] {wh.name}</span>
+                    <span className="text-slate-500 font-mono">{formatINR(wh.stockValue || 0)}</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                    <div className="bg-purple-600 h-full rounded-full" style={{ width: '100%' }} />
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="py-8 text-center text-xs text-slate-400 font-mono">No warehouse stock data.</div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Actionable Tables: Pending Inspections & Reviews */}
+      {/* Recent Items */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Pending Inspections Requiring Approval */}
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
             <div className="flex items-center gap-2">
@@ -262,104 +368,69 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ onNavigate, onSele
                 Inspections Awaiting Decision ({pendingInspectionsList.length})
               </h3>
             </div>
-            <button
-              onClick={() => onNavigate('inspections')}
-              className="text-xs text-emerald-700 hover:text-emerald-800 font-semibold flex items-center gap-1 cursor-pointer"
-            >
-              <span>All Inspections</span>
-              <ArrowRight className="w-3 h-3" />
+            <button onClick={() => onNavigate('inspections')} className="text-xs text-emerald-700 hover:text-emerald-800 font-semibold flex items-center gap-1 cursor-pointer">
+              <span>All Inspections</span> <ArrowRight className="w-3 h-3" />
             </button>
           </div>
-
           {pendingInspectionsList.length > 0 ? (
-            <div className="divide-y divide-slate-100 overflow-hidden">
+            <div className="divide-y divide-slate-100">
               {pendingInspectionsList.slice(0, 5).map((insp) => (
-                <div
-                  key={insp.id}
-                  onClick={() => {
-                    if (onSelectInspection) onSelectInspection(insp.id);
-                    onNavigate('inspections');
-                  }}
-                  className="py-3 flex items-center justify-between hover:bg-slate-50 px-2 rounded-lg cursor-pointer transition-colors"
-                >
+                <div key={insp.id} className="py-3 flex items-center justify-between hover:bg-slate-50 px-2 rounded-lg cursor-pointer transition-colors" onClick={() => { if (onSelectInspection) onSelectInspection(insp.id); onNavigate('inspections'); }}>
                   <div>
                     <div className="flex items-center gap-2 text-xs font-semibold text-slate-900">
                       <span className="font-mono text-emerald-700">{insp.inspection_number}</span>
                       <span className="text-slate-500 font-normal">[{insp.warehouse_code}]</span>
                     </div>
-                    <div className="text-[11px] text-slate-500 mt-0.5">
-                      {insp.item_name} • Qty Inspected: {insp.quantity_inspected}
-                    </div>
+                    <div className="text-[11px] text-slate-500 mt-0.5">{insp.item_name} • Qty: {insp.quantity_inspected}</div>
                   </div>
                   <div className="text-right">
-                    <span className="inline-block px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                      SUBMITTED
+                    <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-mono font-bold ${statusColor(insp.status)}`}>
+                      {insp.status}
                     </span>
-                    <div className="text-[10px] text-slate-400 mt-1">
-                      {new Date(insp.inspection_date).toLocaleDateString()}
-                    </div>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="py-8 text-center text-xs text-slate-400 font-mono">
-              All submitted ammunition inspections have been reviewed.
-            </div>
+            <div className="py-8 text-center text-xs text-slate-400 font-mono">No inspections pending decision.</div>
           )}
         </div>
 
-        {/* Weekly Reviews Requiring Endorsement */}
         <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-xs">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
             <div className="flex items-center gap-2">
-              <CalendarCheck2 className="w-4 h-4 text-emerald-600" />
+              <CalendarCheck2 className="w-4 h-4 text-teal-600" />
               <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">
                 Weekly Reviews Under Review ({pendingReviewsList.length})
               </h3>
             </div>
-            <button
-              onClick={() => onNavigate('weekly-reviews')}
-              className="text-xs text-emerald-700 hover:text-emerald-800 font-semibold flex items-center gap-1 cursor-pointer"
-            >
-              <span>All Reviews</span>
-              <ArrowRight className="w-3 h-3" />
+            <button onClick={() => onNavigate('weekly-reviews')} className="text-xs text-emerald-700 hover:text-emerald-800 font-semibold flex items-center gap-1 cursor-pointer">
+              <span>All Reviews</span> <ArrowRight className="w-3 h-3" />
             </button>
           </div>
-
           {pendingReviewsList.length > 0 ? (
-            <div className="divide-y divide-slate-100 overflow-hidden">
+            <div className="divide-y divide-slate-100">
               {pendingReviewsList.slice(0, 5).map((rev) => (
-                <div
-                  key={rev.id}
-                  onClick={() => onNavigate('weekly-reviews')}
-                  className="py-3 flex items-center justify-between hover:bg-slate-50 px-2 rounded-lg cursor-pointer transition-colors"
-                >
+                <div key={rev.id} className="py-3 flex items-center justify-between hover:bg-slate-50 px-2 rounded-lg cursor-pointer transition-colors" onClick={() => onNavigate('weekly-reviews')}>
                   <div>
                     <div className="flex items-center gap-2 text-xs font-semibold text-slate-900">
                       <span className="font-mono text-teal-700">{rev.review_number}</span>
                       <span className="text-slate-500 font-normal">[{rev.warehouse_code}]</span>
                     </div>
                     <div className="text-[11px] text-slate-500 mt-0.5">
-                      Period: {new Date(rev.week_start_date).toLocaleDateString()} -{' '}
-                      {new Date(rev.week_end_date).toLocaleDateString()}
+                      {new Date(rev.week_start_date).toLocaleDateString()} - {new Date(rev.week_end_date).toLocaleDateString()}
                     </div>
                   </div>
                   <div className="text-right">
                     <span className="inline-block px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-50 text-amber-700 border border-amber-200">
                       AWAITING ENDORSEMENT
                     </span>
-                    <div className="text-[10px] text-slate-400 mt-1 font-mono">
-                      Stock: {formatINR(rev.stock_value)}
-                    </div>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="py-8 text-center text-xs text-slate-400 font-mono">
-              No weekly review cycles pending officer endorsement.
-            </div>
+            <div className="py-8 text-center text-xs text-slate-400 font-mono">No weekly reviews pending endorsement.</div>
           )}
         </div>
       </div>

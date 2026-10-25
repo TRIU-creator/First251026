@@ -17,19 +17,24 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ currentTab, onSelectTab, o
   const totalPending = pendingInspections + pendingReviews;
 
   const tabTitles: Record<NavigationTab, string> = {
-    dashboard: 'Command Operations & Surveillance Dashboard',
-    stock: 'Ammunition & Technical Store Stock Register',
-    inspections: 'Ammunition Condition & Routine Inspections',
-    forms: 'Technical Inspection Forms (Form 263 / 270)',
-    'weekly-reviews': 'Weekly Store Review & Approval Cycles',
-    reports: 'Appendix A & Appendix B Official Store Returns',
-    items: 'Technical Item Master & Ammunition Specifications',
-    warehouses: 'Ordnance Depots & Storage Magazine Facilities',
-    documents: 'Document Attachments & Proof Certificates Hub',
-    users: 'Role-Based User Administration & Depot Assignments',
-    'audit-logs': 'Immutable Security Audit Logs & Transaction Ledger',
-    settings: 'Technical Store Configuration & Terminology',
-    profile: 'Officer Profile & Security Credentials'
+    dashboard: 'AWCMS — Operations Dashboard',
+    stock: 'Stock & Storage Ledger',
+    receipts: 'Receipts & Inward Consignments',
+    issues: 'Issues & Outward Consignments',
+    inspections: 'Ammunition & Technical Inspections',
+    forms: 'Technical Inspection Forms (263 / 270)',
+    'weekly-reviews': 'Weekly Review & Approval',
+    reports: 'Appendix A & Appendix B Reports',
+    items: 'Item / Store Master',
+    warehouses: 'Warehouse Master',
+    drs: 'DRS Number Register',
+    documents: 'Document Hub & PDF Preview',
+    users: 'User Management',
+    'audit-logs': 'Security Audit Logs',
+    settings: 'System Configuration',
+    profile: 'Officer Profile',
+    '404': 'Page Not Found — AWCMS',
+    '403': 'Access Forbidden — AWCMS'
   };
 
   return (

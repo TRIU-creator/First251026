@@ -14,7 +14,7 @@ if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }
 
-const DB_PATH = path.join(DATA_DIR, 'atsi_wms.db');
+const DB_PATH = path.join(DATA_DIR, 'awcms.db');
 export const db = new DatabaseSync(DB_PATH);
 
 // Enable WAL mode & foreign keys
@@ -281,7 +281,132 @@ db.exec(`
     description TEXT,
     updated_at TEXT NOT NULL
   );
+
+  /* ----------------------------------------------------------------
+     RECEIPTS MODULE
+     ---------------------------------------------------------------- */
+  CREATE TABLE IF NOT EXISTS receipts (
+    id TEXT PRIMARY KEY,
+    receipt_number TEXT UNIQUE NOT NULL,
+    warehouse_id TEXT NOT NULL,
+    drs_number TEXT,
+    status TEXT NOT NULL DEFAULT 'DRAFT',
+    supplier_name TEXT,
+    supplier_invoice_number TEXT,
+    receipt_date TEXT NOT NULL,
+    total_items INTEGER NOT NULL DEFAULT 0,
+    total_quantity REAL NOT NULL DEFAULT 0,
+    total_value REAL NOT NULL DEFAULT 0,
+    condition_check_status TEXT DEFAULT 'PENDING',
+    condition_remarks TEXT,
+    approved_by_id TEXT,
+    approved_at TEXT,
+    rejection_reason TEXT,
+    submitted_at TEXT,
+    submitted_by_id TEXT,
+    created_by_id TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS receipt_items (
+    id TEXT PRIMARY KEY,
+    receipt_id TEXT NOT NULL,
+    item_id TEXT NOT NULL,
+    batch_number TEXT NOT NULL,
+    serial_number TEXT,
+    quantity REAL NOT NULL DEFAULT 0,
+    unit TEXT NOT NULL DEFAULT 'ROUNDS',
+    unit_cost REAL NOT NULL DEFAULT 0,
+    total_value REAL NOT NULL DEFAULT 0,
+    storage_location TEXT,
+    storage_condition TEXT,
+    date_of_receipt TEXT,
+    next_inspection_due_date TEXT,
+    status TEXT NOT NULL DEFAULT 'PENDING_RECEIPT_APPROVAL',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+
+  /* ----------------------------------------------------------------
+     ISSUES MODULE
+     ---------------------------------------------------------------- */
+  CREATE TABLE IF NOT EXISTS issues (
+    id TEXT PRIMARY KEY,
+    issue_number TEXT UNIQUE NOT NULL,
+    warehouse_id TEXT NOT NULL,
+    drs_number TEXT,
+    status TEXT NOT NULL DEFAULT 'DRAFT',
+    issue_to_name TEXT,
+    issue_to_organization TEXT,
+    issue_date TEXT NOT NULL,
+    total_items INTEGER NOT NULL DEFAULT 0,
+    total_quantity REAL NOT NULL DEFAULT 0,
+    total_value REAL NOT NULL DEFAULT 0,
+    approved_by_id TEXT,
+    approved_at TEXT,
+    rejection_reason TEXT,
+    submitted_at TEXT,
+    submitted_by_id TEXT,
+    completed_at TEXT,
+    created_by_id TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+
+  CREATE TABLE IF NOT EXISTS issue_items (
+    id TEXT PRIMARY KEY,
+    issue_id TEXT NOT NULL,
+    receipt_id TEXT,
+    stock_record_id TEXT,
+    item_id TEXT NOT NULL,
+    batch_number TEXT NOT NULL,
+    serial_number TEXT,
+    quantity_requested REAL NOT NULL DEFAULT 0,
+    quantity_approved REAL NOT NULL DEFAULT 0,
+    quantity_issued REAL NOT NULL DEFAULT 0,
+    unit TEXT NOT NULL DEFAULT 'ROUNDS',
+    unit_cost REAL NOT NULL DEFAULT 0,
+    total_value REAL NOT NULL DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'PENDING_ISSUE_APPROVAL',
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+
+  /* ----------------------------------------------------------------
+     DRS NUMBER MODULE
+     ---------------------------------------------------------------- */
+  CREATE TABLE IF NOT EXISTS drs_numbers (
+    id TEXT PRIMARY KEY,
+    drs_number TEXT UNIQUE NOT NULL,
+    warehouse_id TEXT,
+    source_module TEXT DEFAULT 'MANUAL',
+    linked_entity_type TEXT,
+    linked_entity_id TEXT,
+    status TEXT NOT NULL DEFAULT 'ACTIVE',
+    cancel_reason TEXT,
+    cancelled_by_id TEXT,
+    cancelled_at TEXT,
+    created_by_id TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+
+  /* ----------------------------------------------------------------
+     EXTEND STOCK LEDGER FOR RECEIPT/ISSUE LINKAGE
+     ---------------------------------------------------------------- */
+  -- receipt_id and issue_id columns added via migration below
 `);
+
+// Migration: add receipt_id and issue_id to stock_ledgers if missing (for existing DBs)
+try {
+  db.exec(`ALTER TABLE stock_ledgers ADD COLUMN receipt_id TEXT;`);
+} catch (_) { /* column already exists */ }
+try {
+  db.exec(`ALTER TABLE stock_ledgers ADD COLUMN issue_id TEXT;`);
+} catch (_) { /* column already exists */ }
+
+// Extend EntityType enum values used elsewhere: RECEIPT, ISSUE, DRS are valid strings
 
 // Function to log audits
 export function logAudit(params: {
@@ -328,7 +453,7 @@ export function initDefaultSettingsAndTemplates() {
   const settingsCount = (db.prepare('SELECT count(*) as count FROM settings').get() as { count: number }).count;
   if (settingsCount === 0) {
     const defaultSettings = [
-      { key: 'SYSTEM_NAME', value: 'Ammunition & Technical Store Inspection and Warehouse Management System (ATSI-WMS)', desc: 'Official System Name' },
+      { key: 'SYSTEM_NAME', value: 'Ammunition & Warehouse Compliance Management System (AWCMS)', desc: 'Official System Name' },
       { key: 'DEFENCE_ORGANIZATION', value: 'Technical Ammunition Support Group / Central Ordnance Depot', desc: 'Operating Formation' },
       { key: 'BASE_CURRENCY', value: 'INR', desc: 'Monetary base denomination' },
       { key: 'CURRENCY_SYMBOL', value: '₹', desc: 'Currency Display Glyph' },
@@ -621,4 +746,15 @@ export function generateSequenceNumber(prefix: string, tableName: string, colNam
   const row = db.prepare(`SELECT count(*) as count FROM ${tableName} WHERE ${colName} LIKE ?`).get(pattern) as { count: number };
   const nextNumber = (row ? row.count : 0) + 1;
   return `${prefix}-${year}-${nextNumber.toString().padStart(6, '0')}`;
+}
+
+// When run directly as a seed script: initialize default settings, form templates, and sync env credentials
+if (import.meta.url === `file://${process.argv[1]}`) {
+  try {
+    initDefaultSettingsAndTemplates();
+    console.log('[SEED] Default settings, form templates, and credentials synchronized.');
+  } catch (err) {
+    console.error('[SEED] Error:', err);
+    process.exit(1);
+  }
 }

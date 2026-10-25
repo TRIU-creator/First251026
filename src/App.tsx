@@ -17,6 +17,11 @@ import { UsersView } from './views/UsersView';
 import { AuditLogsView } from './views/AuditLogsView';
 import { SettingsView } from './views/SettingsView';
 import { ProfileView } from './views/ProfileView';
+import { ReceiptsView } from './views/ReceiptsView';
+import { IssuesView } from './views/IssuesView';
+import { DRSView } from './views/DRSView';
+import { NotFoundView } from './views/NotFoundView';
+import { ForbiddenView } from './views/ForbiddenView';
 
 function MainApp() {
   const {
@@ -37,7 +42,7 @@ function MainApp() {
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center text-slate-700">
         <div className="w-10 h-10 border-2 border-emerald-200 border-t-emerald-600 rounded-full animate-spin mb-4" />
         <p className="text-xs font-mono uppercase tracking-widest text-slate-500 font-semibold">
-          Initializing Ammunition & Technical Stores System...
+          Initializing Ammunition & Warehouse Compliance Management System...
         </p>
       </div>
     );
@@ -94,6 +99,11 @@ function MainApp() {
           {currentTab === 'audit-logs' && <AuditLogsView />}
           {currentTab === 'settings' && <SettingsView />}
           {currentTab === 'profile' && <ProfileView />}
+          {currentTab === 'receipts' && <ReceiptsView />}
+          {currentTab === 'issues' && <IssuesView />}
+          {currentTab === 'drs' && <DRSView />}
+          {currentTab === '404' && <NotFoundView />}
+          {currentTab === '403' && <ForbiddenView />}
         </main>
       </div>
     </div>

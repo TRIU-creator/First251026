@@ -22,7 +22,129 @@ export type FormSubmissionStatus = 'DRAFT' | 'SUBMITTED' | 'UNDER_REVIEW' | 'APP
 
 export type WeeklyReviewStatus = 'DRAFT' | 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED';
 
-export type TransactionType = 'INWARD' | 'OUTWARD' | 'ADJUSTMENT' | 'STATUS_CHANGE';
+export type TransactionType = 'INWARD' | 'OUTWARD' | 'ADJUSTMENT' | 'STATUS_CHANGE' | 'DISPOSAL';
+
+export type ReceiptStatus = 'DRAFT' | 'SUBMITTED' | 'PENDING_APPROVAL' | 'APPROVED' | 'CONDITION_CHECK' | 'APPROVED_FOR_ISSUE' | 'PARTIALLY_ISSUED' | 'ISSUED' | 'CLOSED' | 'REJECTED' | 'CANCELLED';
+
+export type IssueStatus = 'DRAFT' | 'SUBMITTED' | 'PENDING_APPROVAL' | 'APPROVED' | 'PARTIALLY_ISSUED' | 'COMPLETED' | 'REJECTED' | 'CANCELLED';
+
+export type DRSStatus = 'ACTIVE' | 'CANCELLED';
+
+export interface ReceiptItem {
+  id: string;
+  receiptId: string;
+  itemId: string;
+  batchNumber: string;
+  serialNumber?: string;
+  quantity: number;
+  unit: string;
+  unitCost: number;
+  totalValue: number;
+  storageLocation?: string;
+  storageCondition?: string;
+  dateOfReceipt?: string;
+  nextInspectionDueDate?: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Receipt {
+  id: string;
+  receiptNumber: string;
+  warehouseId: string;
+  warehouseName?: string;
+  warehouseCode?: string;
+  drsNumber?: string;
+  status: ReceiptStatus;
+  supplierName?: string;
+  supplierInvoiceNumber?: string;
+  receiptDate: string;
+  totalItems: number;
+  totalQuantity: number;
+  totalValue: number;
+  conditionCheckStatus?: string;
+  conditionRemarks?: string;
+  approvedById?: string;
+  approvedByName?: string;
+  approvedAt?: string;
+  rejectionReason?: string;
+  submittedAt?: string;
+  submittedById?: string;
+  createdById: string;
+  createdByName?: string;
+  items: ReceiptItem[];
+  documents?: Document[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface IssueItem {
+  id: string;
+  issueId: string;
+  receiptId?: string;
+  stockRecordId?: string;
+  itemId: string;
+  batchNumber: string;
+  serialNumber?: string;
+  quantityRequested: number;
+  quantityApproved: number;
+  quantityIssued: number;
+  unit: string;
+  unitCost: number;
+  totalValue: number;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Issue {
+  id: string;
+  issueNumber: string;
+  warehouseId: string;
+  warehouseName?: string;
+  warehouseCode?: string;
+  drsNumber?: string;
+  status: IssueStatus;
+  issueToName?: string;
+  issueToOrganization?: string;
+  issueDate: string;
+  totalItems: number;
+  totalQuantity: number;
+  totalValue: number;
+  approvedById?: string;
+  approvedByName?: string;
+  approvedAt?: string;
+  rejectionReason?: string;
+  submittedAt?: string;
+  submittedById?: string;
+  completedAt?: string;
+  createdById: string;
+  createdByName?: string;
+  items: IssueItem[];
+  documents?: Document[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DRSNumber {
+  id: string;
+  drsNumber: string;
+  warehouseId?: string;
+  warehouseName?: string;
+  warehouseCode?: string;
+  sourceModule: string;
+  linkedEntityType?: string;
+  linkedEntityId?: string;
+  status: DRSStatus;
+  cancelReason?: string;
+  cancelledById?: string;
+  cancelledAt?: string;
+  createdById: string;
+  createdByName?: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface User {
   id: string;

@@ -55,11 +55,11 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[ATSI-WMS] Ammunition & Technical Store Server listening on http://0.0.0.0:${PORT}`);
+    console.log(`[AWCMS] Ammunition & Warehouse Compliance Management System listening on http://0.0.0.0:${PORT}`);
   });
 }
 
 startServer().catch((err) => {
-  console.error('[FATAL] Failed to start ATSI-WMS server:', err);
+  console.error('[FATAL] Failed to start AWCMS server:', err);
   process.exit(1);
 });

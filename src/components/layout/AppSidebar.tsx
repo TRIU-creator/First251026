@@ -13,24 +13,34 @@ import {
   Activity,
   Settings,
   UserCheck,
-  Layers
+  Layers,
+  Package,
+  Truck,
+  Barcode,
+  RotateCcw,
+  Menu
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
 export type NavigationTab =
   | 'dashboard'
   | 'stock'
+  | 'receipts'
+  | 'issues'
   | 'inspections'
   | 'forms'
   | 'weekly-reviews'
   | 'reports'
   | 'items'
   | 'warehouses'
+  | 'drs'
   | 'documents'
   | 'users'
   | 'audit-logs'
   | 'settings'
-  | 'profile';
+  | 'profile'
+  | '404'
+  | '403';
 
 interface AppSidebarProps {
   currentTab: NavigationTab;
@@ -51,6 +61,18 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ currentTab, onSelectTab 
       id: 'stock' as NavigationTab,
       label: 'Stock & Storage Ledger',
       icon: Layers,
+      roles: ['ADMIN', 'WAREHOUSE_MANAGER', 'TECHNICAL_INSPECTOR', 'VIEWER']
+    },
+    {
+      id: 'receipts' as NavigationTab,
+      label: 'Receipts & Inward',
+      icon: Package,
+      roles: ['ADMIN', 'WAREHOUSE_MANAGER', 'TECHNICAL_INSPECTOR', 'VIEWER']
+    },
+    {
+      id: 'issues' as NavigationTab,
+      label: 'Issues & Outward',
+      icon: Truck,
       roles: ['ADMIN', 'WAREHOUSE_MANAGER', 'TECHNICAL_INSPECTOR', 'VIEWER']
     },
     {
@@ -90,6 +112,12 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ currentTab, onSelectTab 
       roles: ['ADMIN', 'WAREHOUSE_MANAGER']
     },
     {
+      id: 'drs' as NavigationTab,
+      label: 'DRS Number Register',
+      icon: Barcode,
+      roles: ['ADMIN', 'WAREHOUSE_MANAGER', 'TECHNICAL_INSPECTOR', 'VIEWER']
+    },
+    {
       id: 'documents' as NavigationTab,
       label: 'Document Hub & PDFs',
       icon: FileUp,
@@ -126,9 +154,9 @@ export const AppSidebar: React.FC<AppSidebarProps> = ({ currentTab, onSelectTab 
           <Shield className="w-5 h-5" />
         </div>
         <div className="overflow-hidden">
-          <h2 className="text-sm font-bold text-slate-900 tracking-wide truncate uppercase">ATSI-WMS</h2>
+          <h2 className="text-sm font-bold text-slate-900 tracking-wide truncate uppercase">AWCMS</h2>
           <p className="text-[10px] text-slate-500 font-mono tracking-tight truncate">
-            AMMUNITION & TECH STORES
+            AMMUNITION & WAREHOUSE COMPLIANCE
           </p>
         </div>
       </div>
